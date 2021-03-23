@@ -144,6 +144,10 @@ ctrl+r重做
 
 w: 表示选中当前光标到下一个单词之间的内容
 
+## vscode中的快捷键
+
+汇总vscode的快捷键
+
 ## 参考资料
 
 [1] vscode中加入vim [https://www.barbarianmeetscoding.com/boost-your-coding-fu-with-vscode-and-vim/table-of-contents](https://www.barbarianmeetscoding.com/boost-your-coding-fu-with-vscode-and-vim/table-of-contents)
