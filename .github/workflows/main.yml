@@ -46,8 +46,6 @@ jobs:
         env:
           SECRET_ID: ${{secrets.SECRET_ID}}
           SECRET_KEY: ${{secrets.SECRET_KEY}}
-          BUCKET: coding-pages-bucket-219762-8173383-9132-437729-1251240781
-          REGION: ap-beijing
         run: tcb login --apiKeyId $SECRET_ID --apiKey $SECRET_KEY
       
       - name: upload

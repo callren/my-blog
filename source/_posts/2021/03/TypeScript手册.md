@@ -138,3 +138,255 @@ function liveDangerously(x?: number | undefined) {
 bigint symbol
 
 ## Narrowing
+
+在TS中，我们需要检验当前传进来的数据的各种情况，才能够缩小类型以便TS能够正常的解析。检查一些值的操作用到最多的就是typeof，但是一定要注意typeof null返回的是'object'字符，以下实例就是一个很好的说明
+
+TS会自动缩小特定分支范围
+
+```TypeScript
+function printAll(strs: string | string[] | null) {
+  if (typeof strs === "object") {
+    for (const s of strs) {
+      // Object is possibly 'null'.
+      console.log(s);
+    }
+  } else if (typeof strs === "string") {
+    console.log(strs);
+  } else {
+    // do nothing
+  }
+}
+```
+
+当然上述代码可以通过strs && typeof strs === 'object'来确定，也可以提前通过if来判断strs是否存在
+
+```TypeScript
+interface Container {
+  value: number | null | undefined;
+}
+
+function multiplyValue(container: Container, factor: number) {
+  // Remove both 'null' and 'undefined' from the type. 所以其不会报错
+  if (container.value != null) {
+    console.log(container.value);
+//                        ^ = (property) Container.value: number
+
+    // Now we can safely multiply 'container.value'.
+    container.value *= factor;
+  }
+}
+```
+
+### 类型谓词
+
+```TypeScript
+function isFish(pet: Fish | Bird): pet is Fish{
+  return (pet as Fish).swim !== undefined
+}
+const zoo: (Fish | Bird)[] = [getSmallPet(), getSmallPet(), getSmallPet()];
+const underWater1: Fish[] = zoo.filter(isFish);
+// or, equivalently
+const underWater2: Fish[] = zoo.filter(isFish) as Fish[];
+
+// The predicate may need repeating for more complex examples
+const underWater3: Fish[] = zoo.filter((pet): pet is Fish => {
+  if (pet.name === "sharkey") return false;
+  return isFish(pet);
+});
+```
+
+pet is Fish相当于我们手动指定了当前的类型
+
+### never类型
+
+在缩小范围的过程中，可以将并集缩小到所有可能性一无所有的程度，这种情况下，将使用never类型来表示不应该存在的状态
+
+never类型可以分配给每种类型，但是，没有类型可以分配给never类型（自身除外）。
+
+## 函数更多相关信息
+
+### 函数类型表达式
+
+```TypeScript
+function greeter(fn: (a: string) => void){
+  // 也可以用类型别名来命名函数类型
+  // type GreetFunction = (a: string) => void
+  fn('hello')
+}
+
+function printToConsole(s: string) {
+  console.log(s)
+}
+
+greeter(printToConsole)
+```
+
+函数除了可以调用意外还具有属性，如何声明一个具有属性的函数？
+
+```TypeScript
+type DescribableFunction = {
+  description: string;
+  (someArg: number): boolean;
+}
+function doSomeThing(fn: DescribableFunction) {
+  console.log(fn.description + 'required' + fn(6))
+}
+```
+
+### 构造签名
+
+构造函数的声明方式
+
+```TypeScript
+type SomeConstructor = {
+  new (s: string): SomeObject;
+}
+function fn(ctor: SomeConstructor) {
+  return new ctor('hello')
+}
+
+// 可以任意组合相同类型的调用签名和构造签名
+interface CallOrConstruct {
+  new (s: string): Date;
+  (n?: number): number;
+}
+
+```
+
+### 泛型函数
+
+如果我们要描述两个值对应之间的关系的时候，要使用泛型，TS可以自动推断出一些类型
+
+```TypeScript
+function firstElement<Type>(arr: Type[]): Type {
+  return arr[0]
+}
+// 指定参数类型
+function combine<Type>(arr1: Type[], arr2: Type[]): Type[] {
+  return arr1.concat(arr2)
+}
+// 这样写有问题
+const arr = combine([1,2], ['hello'])
+
+// 这样写OK
+const arr = combine<string | number>([1,2], ['hello'])
+```
+
+泛型都是关于将两个或者多个具有相同类型的值进行的关联，要尽可能使用类型参数本身，而不要限制它。如果类型参数仅出现在一个位置，则应当考虑我们是否实际需要它
+
+### 可选参数
+
+```TypeScript
+function firstElement(arr?: string) {
+  // ....
+}
+```
+
+为回调编写函数类型时，切勿编写可选参数，除非你打算在不传递该参数的情况下调用该函数
+
+### 函数重载
+
+```TypeScript
+function len(s: string): number;
+function len(arr: any[]): number;
+function len(x: any) {
+  return x.length
+}
+len('') // OK
+len([0]) // OK
+len(Math.random() > 0.5 ? 'hello' : [0]) // fail 不能使用可能是字符串或数组的值来调用它
+```
+
+### 其它类型
+
+- this相关
+- void表示不返值的函数的返回值，但是如果type vf = () => void这种函数类型可以返回任何值，但是它将被忽略
+- object表示不是原始值的任何值，不同于空对象类型，极有可能永远也用不上
+- unknown表示任何值，与any类似，但是更安全，unknown做任何事情都是不合法的，可以描述一个返回值未知类型的函数
+- never某些函数从不返回值，比如一些error的函数，确定没有任何东西的时候也会出现
+- Function，所有函数的值相等，可以用() => void代替
+- 剩余参数，`...m: number[]`
+- 注意TS一般认为数组是可变的，所以在用扩展运算符给一个函数传递参数的时候会发生意想不到的效果，使用as const表达数组的不可变性
+- 解构参数类型`function ({a, b, c}: {a: number; b: number; c: number}){}`
+
+## 对象类型
+
+上述我们可知道定义对象属性可通过type以及interface关键字对对象进行描述
+
+### 属性修饰符
+
+- 可选属性可以在对象属性key值后面添加?表示可选，可以给未指定的值设置默认值
+- readonly只读
+
+```TypeScript
+interface PaintOptions {
+  shape: Shape;
+  xPos?: number;
+  yPos?: number;
+}
+function paintShape({ shape, xPos = 0, yPos = 0 }: PaintOptions)
+```
+
+### 扩展类型
+
+关键字extends可以使我们可以有效的复制其他命名类型的成员，并添加我们所需要的任何新的成员，并且extends可以从多种类型进行扩展`interface ColorfulCircle extends Colorful, Circle {}`
+
+### 交叉点类型
+
+关键字&，用于结合现有的对象类型`type ColorfulCircle = Colorful & Circle;`，ColorfulCircle表示其具有Colorful和Circle的所有成员
+
+### 通用对象类型
+
+使用泛型来声明一个type参数
+
+```TypeScript
+interface Box<Type> {
+  contents: Type;
+}
+type Box<Type> = {
+  contents: Type
+}
+
+type OrNull<Type> = Type | null;
+
+type OneOrMany<Type> = Type | Type[];
+
+type OneOrManyOrNull<Type> = OrNull<OneOrMany<Type>>;
+//   ^ = type OneOrManyOrNull<Type> = OneOrMany<Type> | null
+
+type OneOrManyOrNullStrings = OneOrManyOrNull<string>;
+//   ^ = type OneOrManyOrNullStrings = OneOrMany<string> | null
+
+function getProperty<Type, Key extends keyof Type>(obj: Type, key: Key) {
+  return obj[key];
+}
+```
+
+ReadonlyArray是一种特殊类型，描述不应该被改变的数组，也可以简写`readyonly string[]`
+
+### 元组类型
+
+```TypeScript
+type StringNumberPair = [string, number, number?]
+type StringNumberBooleans = [string, number, ...boolean[]];
+type StringBooleansNumber = [string, ...boolean[], number];
+type BooleansStringNumber = [...boolean[], string, number];
+```
+
+## Keyof类型运算符
+
+作用于对象
+
+```TypeScript
+type Mapish = { [k: string]: boolean };
+type M = keyof Mapish;
+//   ^ = type M = string | number
+```
+
+对象的key值始终被强制转换成字符串，因此`obj[0]`与`obj['0']`始终相同
+
+ts中也有一个typeof关键字，作用就是找到当前一些内容的ts类型
+
+## class
+
+## module
