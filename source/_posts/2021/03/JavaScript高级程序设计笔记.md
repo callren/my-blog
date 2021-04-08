@@ -108,4 +108,37 @@ Boolean(NaN) // false
 
 转义序列表示一个字符，如果字符包含双字节字符，那么length属性返回的可能是不准确的字符数
 
-转换成字符串可使用toString方法，null和undefined没有toString方法，toString可以穿入一个参数，表示得到数值的哪种进制字符串。如果你不确定一个值是不是
+转换成字符串可使用toString方法，null和undefined没有toString方法，toString可以穿入一个参数，表示得到数值的哪种进制字符串。如果你不确定一个值是不是null或者undefined，可以使用String()函数，始终返回相应类型的值的字符串。内部的实现是如果有toString方法，则调用该方法（不穿参数）返回对应的结果。
+
+用一个加号给一个值加上一个空字符串也可以将其转换成字符串
+
+模版字符串：模版字符串内部的空格会被保留，在使用的时候要注意如果模版字符串是以一个换行符开头的话，那么其第一个字符全等于`\n`，任何通过${}插入的值都会被toString()强制转换成字符串。标签函数可以自定义插值行为。标签函数会接收被插值记号分隔后的模版和对每个表达式求值的结果。标签函数接收到的参数依次是原始字符串数组和对每个表达式求值的结果，函数返回值是对模版字面量求值得到的字符串
+
+```JavaScript
+let a = 6
+let b = 9
+function simpleTag(strings, ...expressions){
+  console.log(strings)
+  for(const expression of expressions){
+    console.log(expression)
+  }
+  return 'foobar'
+}
+let taggedResult = simpleTag`${ a } + ${ b } = ${ a + b }`
+console.log(taggedResult)
+// strings: ['', ' + ', ' = ', '']
+// 6
+// 9
+// 15
+
+// 对于想把字符串和对表达式的结果拼接起来作为默认返回的字符串可以这样
+function zipTag(strings, ...expressions){
+  return strings[0] + expressions.map((e, i) => `${e}${strings[i + 1]}`).join('')
+}
+
+// 原始字符串
+console.log(`\u00A9`) // ©️
+console.log(String.raw`\u00A9`) // \u00A9
+```
+
+#### Symbol类型
