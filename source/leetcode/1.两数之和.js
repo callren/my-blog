@@ -10,6 +10,8 @@
  * @param {number} target
  * @return {number[]}
  */
+
+// 最好的方式就是使用hashmap做一个对应的映射，数组遍历一次即可
 var twoSum = function(nums, target) {
     let hash = {}
     let result = []

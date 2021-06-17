@@ -169,13 +169,19 @@ useContext
 
 自定义hook，hooks的基本准则，不能在条件循环中使用，不能在普通函数中使用
 
-forwardRed可以对ref进行传递
+forwardRef可以对ref进行传递
 
 React.memo可以对组件进行缓存，第二个参数可以决定是否渲染。不可以把react.memo放在组件渲染过程中
 
 ## 认识React Router
 
+Route Link history
 
+StaticRouter为静态路由，也称为无状态路由。通常在服务端Nodejs中使用。MemoryRouter和NativeRouter在测试场景或ReactNative中使用较多
+
+## Router源码解析
+
+三部分：history监听，提供初始context以及提前监听
 
 ## 之后必备
 
